@@ -1,8 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::File,
-    io::{BufRead, BufReader},
-};
+use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context, Result, bail};
 use log::warn;
@@ -14,7 +10,7 @@ use crate::lexer::{
 
 mod patterns;
 pub mod token;
-mod tokenization_function;
+mod tokenization_functions;
 
 pub struct Lexer {
     contents: Vec<char>,

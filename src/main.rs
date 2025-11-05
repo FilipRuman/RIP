@@ -32,16 +32,14 @@ fn parse() -> Result<()> {
     );
     info!("Tokens: {tokens:#?}");
 
-
-
     Ok(())
-}
-
-fn black_list_filter_tokens_by_kind(tokens: &mut Vec<Token>, black_list: HashSet<TokenKind>) {
-    tokens.retain(|token| !black_list.contains(&token.kind))
 }
 
 fn tokenize_file(path: &str) -> Result<Vec<Token>> {
     let chars = fs::read_to_string(path)?.chars().collect::<Vec<char>>();
     lexer::tokenize(chars)
+}
+
+fn black_list_filter_tokens_by_kind(tokens: &mut Vec<Token>, black_list: HashSet<TokenKind>) {
+    tokens.retain(|token| !black_list.contains(&token.kind))
 }

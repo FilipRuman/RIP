@@ -1,7 +1,7 @@
 use crate::lexer::{
     Lexer,
     token::{Token, TokenKind},
-    tokenization_function::{
+    tokenization_functions::{
         handle_comments, handle_compiler_data, handle_identifier, handle_number, handle_string,
     },
 };
@@ -50,6 +50,7 @@ pub fn setup_token_patters() -> Result<HashMap<(char, char), TokenPattern>> {
                     pat.second_char
                 );
             }
+
             hashmap.insert(key, pat.pattern);
         }
         i += 1;
@@ -81,7 +82,7 @@ const SYMBOL_CHARS: [char; 53] = [
 const NUMBERS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 fn patterns() -> Vec<TokenPatternInitialization> {
-    let patterns: Vec<TokenPatternInitialization> = vec![
+    vec![
         TokenPatternInitialization::new(vec!['/'], '/', TokenPattern::Long(handle_comments)),
         TokenPatternInitialization::new(vec!['"'], ' ', TokenPattern::Long(handle_string)),
         TokenPatternInitialization::new(vec!['#'], ' ', TokenPattern::Long(handle_compiler_data)),
@@ -411,6 +412,5 @@ fn patterns() -> Vec<TokenPatternInitialization> {
                 use_second_char: false,
             },
         ),
-    ];
-    patterns
+    ]
 }
