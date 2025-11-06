@@ -75,4 +75,5 @@ pub enum TokenKind {
     Break,
     Other,
     Constant,
+    Typedef,
 }

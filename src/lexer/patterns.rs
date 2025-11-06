@@ -23,6 +23,7 @@ struct TokenPatternInitialization {
     start_chars: Vec<char>,
     second_char: char,
     pattern: TokenPattern,
+
 }
 
 impl TokenPatternInitialization {

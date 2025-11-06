@@ -77,6 +77,7 @@ pub fn tokenize(text: Vec<char>) -> Result<Vec<Token>> {
         ("false", TokenKind::False),
         ("struct", TokenKind::Struct),
         ("for", TokenKind::For),
+        ("typedef", TokenKind::Typedef),
     ]);
 
     let mut lexer = Lexer {
@@ -89,7 +90,7 @@ pub fn tokenize(text: Vec<char>) -> Result<Vec<Token>> {
     };
 
     let mut output: Vec<Token> = vec![];
-    let mut current_line: u16 = 0;
+    let mut current_line: u16 = 1;
     while lexer.i < lexer.contents.len() {
         let pattern = match patterns::pattern_for_current_char(&mut lexer) {
             Some(val) => val,

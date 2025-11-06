@@ -11,7 +11,6 @@ pub fn handle_comments(line: u16, lexer: &mut Lexer) -> Result<Token> {
     while lexer.current() != '\n' {
         value += &lexer.advance().to_string();
     }
-    lexer.expect('\n')?;
 
     Ok(Token {
         value,

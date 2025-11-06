@@ -28,9 +28,24 @@ fn parse() -> Result<()> {
 
     black_list_filter_tokens_by_kind(
         &mut tokens,
-        HashSet::from([TokenKind::Tab, TokenKind::Comment, TokenKind::WhiteSpace]),
+        HashSet::from([
+            TokenKind::Tab,
+            TokenKind::Comment,
+            TokenKind::NextLine,
+            TokenKind::WhiteSpace,
+        ]),
     );
+
+    tokens.push(Token {
+        value: String::new(),
+        kind: TokenKind::EndOfFile,
+        line: 0,
+    });
     info!("Tokens: {tokens:#?}");
+
+    let expressions = parser::parse(tokens, FILE_PATH.to_owned())?;
+
+    info!("Expressions: {expressions:#?}");
 
     Ok(())
 }
