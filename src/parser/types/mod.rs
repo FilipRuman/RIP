@@ -1,26 +1,108 @@
-use crate::lexer::token::TokenKind;
-use crate::parser::Parser;
-use anyhow::Result;
+use crate::lexer::token::Token;
+use crate::parser::expression::Property;
+use crate::parser::{Parser, parsing_functions};
+use crate::{lexer::token::TokenKind, parser::parsing_functions::data_parsing::str_to_num};
+use anyhow::{Context, Result, bail};
+
+#[derive(Debug, Clone)]
+pub struct EnumField {
+    name: String,
+    value: u32,
+}
 
 #[derive(Debug, Clone)]
 pub enum DataType {
-    Data(String),
+    Data { unsigned: bool },
+    Struct { properties: Vec<Property> },
+    Enum { fields: Vec<EnumField> },
     Pointer(Box<DataType>),
 }
 
 pub fn parse(parser: &mut Parser) -> Result<DataType> {
-    let mut current = parser.current().clone();
+    let unsigned = {
+        let current = parser.current();
 
-    let unsigned = current.value == "unsigned";
-    if unsigned {
-        parser.advance();
+        let unsigned = current.value == "unsigned";
+        if unsigned {
+            parser.advance();
+        }
+        unsigned
+    };
+
+    let current = parser.advance().to_owned();
+    match current.kind {
+        TokenKind::Identifier => {
+            identifier_type(parser, unsigned, current).context("types::parse -> identifier")
+        }
+        TokenKind::Enum => enum_type(parser).context("types::parse -> Enum"),
+        TokenKind::Struct => struct_type(parser).context("types::parse -> Struct"),
+        other => {
+            bail!(
+                "types::parse: expected to fine 'Identifier' || 'Enum' || 'Struct', found: {:?} -> parsing of this token kind as datatype is not supported",
+                other
+            )
+        }
     }
+}
 
-    current = parser.expect(TokenKind::Identifier)?.clone();
-    let mut output = DataType::Data(current.value);
+fn identifier_type(parser: &mut Parser, unsigned: bool, current: Token) -> Result<DataType> {
+    let mut output = DataType::Data { unsigned };
     while current.kind == TokenKind::Star {
         output = DataType::Pointer(Box::new(output));
         parser.advance();
     }
     Ok(output)
+}
+
+fn enum_type(parser: &mut Parser) -> Result<DataType> {
+    parser.expect(TokenKind::OpenCurly)?;
+    let mut current_value = 0;
+    let mut fields = Vec::new();
+    let mut end = false;
+    while !end {
+        let field_name = parser.expect(TokenKind::Identifier)?.value;
+        match parser.advance().kind {
+            TokenKind::Equals => {
+                current_value = str_to_num(&parser.advance().value)?;
+                end = parser.advance().kind == TokenKind::CloseCurly;
+            }
+            TokenKind::Comma => {}
+            TokenKind::CloseCurly => {
+                end = true;
+            }
+            kind => {
+                bail!(
+                    "expected to find token of kind: 'Comma' || 'Assignment' || 'CloseParen', found: '{kind:?}'"
+                )
+            }
+        }
+
+        fields.push(EnumField {
+            name: field_name,
+            value: current_value,
+        });
+
+        current_value += 1;
+    }
+    Ok(DataType::Enum { fields })
+}
+
+fn struct_type(parser: &mut Parser) -> Result<DataType> {
+    parser.expect(TokenKind::OpenCurly)?;
+    let mut properties = Vec::new();
+    while parser.current().kind != TokenKind::CloseCurly {
+        let data_type = parse(parser)?;
+        let name = parser.expect(TokenKind::Identifier)?.value;
+        parser
+            .expect(TokenKind::SemiColon)
+            .context("expected to find a semicolon after a expression - struct contents")?;
+
+        properties.push(Property {
+            var_name: name,
+            var_type: data_type,
+        });
+    }
+
+    parser.expect(TokenKind::CloseCurly)?;
+    Ok(DataType::Struct { properties })
 }

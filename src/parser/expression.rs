@@ -10,7 +10,7 @@ pub struct DebugData {
 }
 
 #[derive(Debug, Clone)]
-pub struct FunctionProperty {
+pub struct Property {
     pub var_name: String,
     pub var_type: DataType,
 }
@@ -18,9 +18,20 @@ pub struct FunctionProperty {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Skip,
-    As(Box<Expression>, DataType, DebugData),
-    Dereference(Box<Expression>, DebugData),
-    Reference(Box<Expression>, DebugData),
+    TypeConversion {
+        value: Box<Expression>,
+        data_type: DataType,
+        debug_data: DebugData,
+    },
+    Typedef {
+        data_type: DataType,
+        name: String,
+        debug_data: DebugData,
+    },
+    Dereference {
+        value: Box<Expression>,
+        debug_data: DebugData,
+    },
     Boolean(bool, DebugData),
 
     Number(u32, DebugData),
@@ -49,23 +60,15 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    Grouping(Box<Expression>, DebugData),
+    Grouping {
+        value: Box<Expression>,
+        debug_data: DebugData,
+    },
     Struct {
         public: bool,
         name: String,
-        properties: Vec<Expression>,
+        properties: Vec<Property>,
         functions: Vec<Expression>,
-
-        debug_data: DebugData,
-    },
-    StructProperty {
-        var_name: String,
-        var_type: DataType,
-
-        debug_data: DebugData,
-    },
-    StructFunction {
-        name: String, /* ,type : Type */
 
         debug_data: DebugData,
     },
@@ -77,7 +80,7 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    ClassInstantiation {
+    StructInstantiation {
         name: String,
         properties: Vec<Expression>,
 
@@ -91,7 +94,7 @@ pub enum Expression {
     },
     Function {
         name: String,
-        properties: Vec<FunctionProperty>,
+        properties: Vec<Property>,
         output: DataType,
         inside: Vec<Expression>,
         debug_data: DebugData,
@@ -103,7 +106,14 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    Break,
+    AccessReference {
+        value: Box<Expression>,
+
+        debug_data: DebugData,
+    },
+    Break {
+        debug_data: DebugData,
+    },
     Return {
         value: Box<Expression>,
 
@@ -123,9 +133,9 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    SquareBrackets {
+    Index {
         left: Box<Expression>,
-        indexes: Vec<Expression>,
+        index: Box<Expression>,
 
         debug_data: DebugData,
     },
@@ -136,16 +146,17 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    For {
-        iterator_name: String,
-        iteration_target: Box<Expression>,
-        inside: Vec<Expression>,
-
+    Static {
+        value: Box<Expression>,
         debug_data: DebugData,
     },
-    Range {
-        from: Box<Expression>,
-        to: Box<Expression>,
+
+    For {
+        iterator_init: Box<Expression>,
+        condition: Box<Expression>,
+        incr: Box<Expression>,
+        inside: Vec<Expression>,
+
         debug_data: DebugData,
     },
     FunctionCall {
@@ -157,13 +168,20 @@ pub enum Expression {
 impl Expression {
     pub fn debug_data(&self) -> DebugData {
         match self {
+            Expression::AccessReference {
+                value: _,
+                debug_data,
+            } => debug_data.to_owned(),
             Expression::Skip => todo!(),
-            Expression::Break => todo!(),
+            Expression::Break { debug_data } => debug_data.to_owned(),
             Expression::Number(_, debug_data) => debug_data.to_owned(),
             Self::Boolean(_, debug_data) => debug_data.to_owned(),
             Expression::String(_, debug_data) => debug_data.to_owned(),
             Expression::Identifier(_, debug_data) => debug_data.to_owned(),
-            Expression::Dereference(_, debug_data) => debug_data.to_owned(),
+            Expression::Dereference {
+                value: _,
+                debug_data,
+            } => debug_data.to_owned(),
             Expression::Prefix {
                 prefix: _,
                 value: _,
@@ -181,21 +199,15 @@ impl Expression {
                 name: _,
                 debug_data,
             } => debug_data.to_owned(),
-            Expression::Grouping(_, debug_data) => debug_data.to_owned(),
+            Expression::Grouping {
+                value: _,
+                debug_data,
+            } => debug_data.to_owned(),
             Expression::Struct {
                 public: _,
                 name: _,
                 properties: _,
                 functions: _,
-                debug_data,
-            } => debug_data.to_owned(),
-            Expression::StructProperty {
-                var_name: _,
-                var_type: _,
-                debug_data,
-            } => debug_data.to_owned(),
-            Expression::StructFunction {
-                name: _,
                 debug_data,
             } => debug_data.to_owned(),
             Expression::Binary {
@@ -204,7 +216,7 @@ impl Expression {
                 right: _,
                 debug_data,
             } => debug_data.to_owned(),
-            Expression::ClassInstantiation {
+            Expression::StructInstantiation {
                 name: _,
                 properties: _,
                 debug_data,
@@ -242,9 +254,9 @@ impl Expression {
                 inside: _,
                 debug_data,
             } => debug_data.to_owned(),
-            Expression::SquareBrackets {
+            Expression::Index {
                 left: _,
-                indexes: _,
+                index: _,
                 debug_data,
             } => debug_data.to_owned(),
             Expression::While {
@@ -253,14 +265,10 @@ impl Expression {
                 debug_data,
             } => debug_data.to_owned(),
             Expression::For {
-                iterator_name: _,
-                iteration_target: _,
+                iterator_init: _,
+                condition: _,
+                incr: _,
                 inside: _,
-                debug_data,
-            } => debug_data.to_owned(),
-            Expression::Range {
-                from: _,
-                to: _,
                 debug_data,
             } => debug_data.to_owned(),
             Expression::FunctionCall {
@@ -268,9 +276,21 @@ impl Expression {
                 values: _,
                 debug_data,
             } => debug_data.to_owned(),
-            Expression::Reference(_, debug_data) => debug_data.to_owned(),
-            Expression::As(_, _, debug_data) => debug_data.to_owned(),
             Expression::CompilerData(_, debug_data) => debug_data.to_owned(),
+            Expression::Typedef {
+                data_type: _,
+                name: _,
+                debug_data,
+            } => debug_data.to_owned(),
+            Expression::TypeConversion {
+                value: _,
+                data_type: _,
+                debug_data,
+            } => debug_data.to_owned(),
+            Expression::Static {
+                value: _,
+                debug_data,
+            } => debug_data.to_owned(),
         }
     }
 }

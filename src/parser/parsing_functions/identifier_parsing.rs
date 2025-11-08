@@ -2,7 +2,7 @@ use crate::{
     lexer::token::TokenKind,
     parser::{
         Parser,
-        expression::{Expression, FunctionProperty},
+        expression::{Expression, Property},
         parsing_functions::{self},
         types::{self, DataType},
     },
@@ -46,7 +46,7 @@ fn handle_function_declaration(
     loop {
         let data_type = types::parse(parser).context("parse function output data type")?;
         let name = parser.advance().value.to_owned();
-        properties.push(FunctionProperty {
+        properties.push(Property {
             var_name: name,
             var_type: data_type,
         });

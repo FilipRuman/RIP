@@ -1,6 +1,6 @@
-#include "file.c" // types
+#include "file.c"
 #include <cstdio>
-#include <stddef.h> // NULL, size_t
+#include <stddef.h>
 typedef int i32;
 
 typedef struct {
@@ -23,19 +23,16 @@ int main() {
   Vec v = {.x = 3, .y = 4};
   Mode m = MODE_B;
 
-  i32 idx = v.x - 1;   // tests arithmetic + index expressions
-  i32 val = data[idx]; // array indexing
+  i32 idx = v.x - 1;
+  i32 val = data[idx];
 
-  // Typedef shadowing - variable named `i32`
   i32 i32 = identity(7);
 
-  // Nested parentheses + sequencing + local shadowing in inner scope
   {
     int val = mul(v.x, v.y);
-    global = val; // write to global to check symbol resolution
+    global = val;
   }
 
-  // Multiple declarators, mixed init
   int a = 2;
   int b = a + 3;
   int c;

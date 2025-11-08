@@ -23,7 +23,6 @@ struct TokenPatternInitialization {
     start_chars: Vec<char>,
     second_char: char,
     pattern: TokenPattern,
-
 }
 
 impl TokenPatternInitialization {
@@ -401,7 +400,7 @@ fn patterns() -> Vec<TokenPatternInitialization> {
             vec!['='],
             ' ',
             TokenPattern::Fast {
-                kind: TokenKind::Assignment,
+                kind: TokenKind::Equals,
                 use_second_char: false,
             },
         ),
