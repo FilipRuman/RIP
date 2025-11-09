@@ -6,23 +6,31 @@ pub mod data_parsing;
 pub mod identifier_parsing;
 pub mod statement_parsing;
 use anyhow::{Context, Result};
+use log::info;
 
 pub fn function_call(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
     parser.expect(TokenKind::OpenParen)?;
-    let mut output = Vec::new();
+    let mut properties = Vec::new();
     loop {
-        output.push(expression(parser, 0).with_context(|| {
-            format!("function call- parse input values-> {:?}", parser.current())
-        })?);
+        let current_token = parser.current().to_owned();
+        properties.push(
+            expression(parser, 0).with_context(|| {
+                format!("function call- parse input values-> {:?}", current_token)
+            })?,
+        );
 
-        if parser.advance().kind == TokenKind::CloseParen {
+        if parser.current().kind == TokenKind::CloseParen {
             break;
         }
+        parser.advance();
     }
+    parser
+        .expect(TokenKind::CloseParen)
+        .context("function_cal -> end paren")?;
 
     Ok(Expression::FunctionCall {
         left: Box::new(left),
-        values: output,
+        values: properties,
         debug_data: parser.debug_data(),
     })
 }
@@ -47,6 +55,7 @@ pub fn return_expr(parser: &mut Parser) -> Result<Expression> {
     })
 }
 pub fn expression(parser: &mut Parser, bp: i8) -> Result<Expression> {
+    info!("parse expression: input {:?}", parser.current());
     let mut current_expression = {
         let nod_function = parser.current_stats()?.nod_function.with_context(|| {
             format!(
@@ -54,8 +63,9 @@ pub fn expression(parser: &mut Parser, bp: i8) -> Result<Expression> {
                 parser.current().kind
             )
         })?;
-        let current = parser.current().to_owned();
-        nod_function(parser).with_context(|| format!("parse expression, nod- {:?}", current))?
+        let current_token = parser.current().to_owned();
+        nod_function(parser)
+            .with_context(|| format!("parse expression, nod- {:?}", current_token))?
     };
 
     while let current_stats = parser.current_stats()?
@@ -68,9 +78,17 @@ pub fn expression(parser: &mut Parser, bp: i8) -> Result<Expression> {
             )
         })?;
 
+        let current_token_for_dbg = parser.current().to_owned();
+        let current_expr_for_dbg = current_expression.to_owned();
+
         current_expression = led_function(parser, current_expression, current_stats.binding_power)
-            .with_context(|| format!("parse expression, led- {:?}", parser.current()))?;
+            .context(format!(
+                "parse expression, led- {:?}, current expression: {:?}",
+                current_token_for_dbg, current_expr_for_dbg
+            ))?;
     }
+
+    info!("parse expression: output {:?}", current_expression);
     return Ok(current_expression);
 }
 
@@ -136,6 +154,16 @@ pub fn grouping(parser: &mut Parser) -> Result<Expression> {
         })
     }
 }
+pub fn member_expr(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
+    parser.expect(TokenKind::Dot)?;
+    let right = expression(parser, 0).with_context(|| format!("member expr-> left:{:?}", left))?;
+
+    Ok(Expression::MemberExpr {
+        left: Box::new(left),
+        right: Box::new(right),
+        debug_data: parser.debug_data(),
+    })
+}
 pub fn index(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
     parser.expect(TokenKind::OpenBracket)?;
     let index = expression(parser, 0)?;
@@ -163,6 +191,8 @@ pub fn type_def(parser: &mut Parser) -> Result<Expression> {
         .expect(TokenKind::Identifier)
         .context("type_def -> name")?
         .value;
+
+    parser.valid_data_names.insert(name.to_string());
 
     Ok(Expression::Typedef {
         data_type,

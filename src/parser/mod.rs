@@ -6,13 +6,11 @@ pub mod types;
 use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context, Result, bail};
-use log::*;
 
 use crate::{
     lexer::token::{Token, TokenKind},
     parser::{
         expression::Expression,
-        parsing_functions::identifier_parsing,
         token_stats::{TokenStats, token_stats},
     },
 };
@@ -21,7 +19,7 @@ type NodFunction = fn(&mut Parser) -> Result<Expression>;
 type LedFunction = fn(&mut Parser, left: Expression, bp: i8) -> Result<Expression>;
 
 pub struct Parser {
-    pub valid_data_names: HashSet<&'static str>,
+    pub valid_data_names: HashSet<String>,
     pub tokens: Vec<Token>,
     pub i: usize,
     pub token_stats: HashMap<TokenKind, TokenStats>,
@@ -72,7 +70,13 @@ impl Parser {
 pub fn parse(tokens: Vec<Token>, file: String) -> Result<Vec<Expression>> {
     let mut parser = Parser {
         valid_data_names: HashSet::from([
-            "bool", "char", "short", "int", "long", "float", "double",
+            "bool".to_string(),
+            "char".to_string(),
+            "short".to_string(),
+            "int".to_string(),
+            "long".to_string(),
+            "float".to_string(),
+            "double".to_string(),
         ]),
         i: 0,
         tokens: tokens,

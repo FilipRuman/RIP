@@ -1,4 +1,7 @@
+use std::collections::vec_deque;
+
 use anyhow::{Context, Result};
+use log::info;
 
 use crate::{
     lexer::token::TokenKind,
@@ -8,6 +11,54 @@ use crate::{
         parsing_functions::{self, expression},
     },
 };
+pub fn parse_open_curly(parser: &mut Parser) -> Result<Expression> {
+    parser.expect(TokenKind::OpenCurly)?;
+    // this might not be the best way to do this, but  i don't see another one for now
+    if parser.next().kind == TokenKind::Comma {
+        parse_data_structure_initialization(parser)
+    } else {
+        new_code_block(parser)
+    }
+}
+
+pub fn new_code_block(parser: &mut Parser) -> Result<Expression> {
+    let mut inside = Vec::new();
+    while parser.current().kind != TokenKind::CloseCurly {
+        inside.push(parsing_functions::expression(parser, 0).with_context(|| {
+            format!(
+                "debug data: {:?},\n parsed expressions:{:#?}",
+                parser.debug_data(),
+                inside
+            )
+        })?);
+        if parser.current().kind == TokenKind::SemiColon {
+            parser.advance();
+        }
+    }
+    parser.expect(TokenKind::CloseCurly)?;
+
+    Ok(Expression::NewCodeBlock {
+        inside,
+        debug_data: parser.debug_data(),
+    })
+}
+pub fn parse_data_structure_initialization(parser: &mut Parser) -> Result<Expression> {
+    let mut values = Vec::new();
+    loop {
+        let value = expression(parser, 0)?;
+        values.push(value);
+        if parser.current().kind == TokenKind::CloseCurly {
+            break;
+        }
+        parser.expect(TokenKind::Comma)?;
+    }
+    parser.expect(TokenKind::CloseCurly)?;
+
+    Ok(Expression::DataStructureInitialization {
+        values,
+        debug_data: parser.debug_data(),
+    })
+}
 
 pub fn parse_if(parser: &mut Parser) -> Result<Expression> {
     parser.expect(TokenKind::If)?;

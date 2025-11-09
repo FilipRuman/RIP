@@ -18,6 +18,10 @@ pub struct Property {
 #[derive(Debug, Clone)]
 pub enum Expression {
     Skip,
+    DataStructureInitialization {
+        values: Vec<Expression>,
+        debug_data: DebugData,
+    },
     TypeConversion {
         value: Box<Expression>,
         data_type: DataType,
@@ -54,6 +58,10 @@ pub enum Expression {
         debug_data: DebugData,
     },
     // type name mutable
+    DataTypeAccess {
+        data_type: DataType,
+        debug_data: DebugData,
+    },
     VariableDeclaration {
         var_type: DataType,
         name: String,
@@ -72,6 +80,10 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
+    NewCodeBlock {
+        inside: Vec<Expression>,
+        debug_data: DebugData,
+    },
 
     Binary {
         left: Box<Expression>,
@@ -79,18 +91,6 @@ pub enum Expression {
         right: Box<Expression>,
 
         debug_data: DebugData,
-    },
-    StructInstantiation {
-        name: String,
-        properties: Vec<Expression>,
-
-        debug_data: DebugData,
-    },
-    ArrayInitialization {
-        length: u32,
-        properties: Vec<Expression>,
-        debug_data: DebugData,
-        inside_type: DataType,
     },
     Function {
         name: String,
@@ -216,16 +216,9 @@ impl Expression {
                 right: _,
                 debug_data,
             } => debug_data.to_owned(),
-            Expression::StructInstantiation {
-                name: _,
-                properties: _,
+            Expression::DataStructureInitialization {
+                values: _,
                 debug_data,
-            } => debug_data.to_owned(),
-            Expression::ArrayInitialization {
-                properties: _,
-                debug_data,
-                length: _,
-                inside_type: _,
             } => debug_data.to_owned(),
             Expression::Function {
                 name: _,
@@ -289,6 +282,15 @@ impl Expression {
             } => debug_data.to_owned(),
             Expression::Static {
                 value: _,
+                debug_data,
+            } => debug_data.to_owned(),
+
+            Expression::NewCodeBlock {
+                inside: _,
+                debug_data,
+            } => debug_data.to_owned(),
+            Expression::DataTypeAccess {
+                data_type: _,
                 debug_data,
             } => debug_data.to_owned(),
         }

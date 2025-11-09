@@ -4,7 +4,11 @@ use crate::{
     lexer::token::TokenKind,
     parser::{
         LedFunction, NodFunction,
-        parsing_functions::{self, identifier_parsing, type_def},
+        parsing_functions::{
+            self, identifier_parsing,
+            statement_parsing::{parse_data_structure_initialization, parse_open_curly},
+            type_def,
+        },
     },
 };
 
@@ -240,14 +244,6 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             },
         ),
         (
-            TokenKind::OpenCurly,
-            TokenStats {
-                binding_power: 0,
-                nod_function: None,
-                led_function: None,
-            },
-        ),
-        (
             TokenKind::Typedef,
             TokenStats {
                 binding_power: 0,
@@ -343,7 +339,32 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
                 led_function: None,
             },
         ),
-        // Dot,
+        (
+            TokenKind::OpenCurly,
+            TokenStats {
+                binding_power: 0,
+                nod_function: Some(
+                    parsing_functions::statement_parsing::parse_open_curly,
+                ),
+                led_function: None,
+            },
+        ),
+        (
+            TokenKind::Comma,
+            TokenStats {
+                binding_power: 0,
+                nod_function: None,
+                led_function: None,
+            },
+        ),
+        (
+            TokenKind::Dot,
+            TokenStats {
+                binding_power: 1,
+                nod_function: None,
+                led_function: Some(parsing_functions::member_expr),
+            },
+        ),
         // Colon,
         // Question,
         // Reference,

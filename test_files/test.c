@@ -20,7 +20,7 @@ i32 weird_decl = sizeof(Vec) + sizeof(Mode);
 i32 identity(i32 v) { return v; }
 
 int main() {
-  Vec v = {.x = 3, .y = 4};
+  Vec v = {3, 4};
   Mode m = MODE_B;
 
   i32 idx = v.x - 1;
