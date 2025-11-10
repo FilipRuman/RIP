@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use crate::{
     lexer::token::TokenKind,
     parser::{
-        LedFunction, NodFunction,
-        parsing_functions::{
-            self, identifier_parsing,
-            statement_parsing::{parse_data_structure_initialization, parse_open_curly},
-            type_def,
-        },
+        Parser,
+        expression::Expression,
+        parsing_functions::{self, grouping, identifier_parsing},
     },
 };
+use anyhow::Result;
 
+type NodFunction = fn(&mut Parser) -> Result<Expression>;
+type LedFunction = fn(&mut Parser, left: Expression, bp: i8) -> Result<Expression>;
 pub struct TokenStats {
     pub binding_power: i8,
     pub nod_function: Option<NodFunction>,
@@ -71,7 +71,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenKind::Star,
             TokenStats {
                 binding_power: 3,
-                nod_function: None,
+                nod_function: Some(parsing_functions::dereference),
                 led_function: Some(parsing_functions::binary),
             },
         ),
@@ -207,7 +207,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenKind::OpenParen,
             TokenStats {
                 binding_power: 5,
-                nod_function: None,
+                nod_function: Some(parsing_functions::grouping),
                 led_function: Some(parsing_functions::function_call),
             },
         ),
@@ -247,7 +247,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenKind::Typedef,
             TokenStats {
                 binding_power: 0,
-                nod_function: Some(type_def),
+                nod_function: Some(parsing_functions::type_def),
                 led_function: None,
             },
         ),
@@ -288,7 +288,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenStats {
                 binding_power: 5,
                 nod_function: None,
-                led_function: Some(parsing_functions::assignment),
+                led_function: Some(parsing_functions::increment),
             },
         ),
         (
@@ -296,7 +296,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenStats {
                 binding_power: 5,
                 nod_function: None,
-                led_function: Some(parsing_functions::assignment),
+                led_function: Some(parsing_functions::decrement),
             },
         ),
         (
@@ -311,8 +311,8 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenKind::Reference,
             TokenStats {
                 binding_power: 5,
-                nod_function: None,
-                led_function: Some(parsing_functions::assignment),
+                nod_function: Some(parsing_functions::access_reference),
+                led_function: None,
             },
         ),
         (
@@ -343,9 +343,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenKind::OpenCurly,
             TokenStats {
                 binding_power: 0,
-                nod_function: Some(
-                    parsing_functions::statement_parsing::parse_open_curly,
-                ),
+                nod_function: Some(parsing_functions::statement_parsing::parse_open_curly),
                 led_function: None,
             },
         ),
@@ -354,6 +352,30 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenStats {
                 binding_power: 0,
                 nod_function: None,
+                led_function: None,
+            },
+        ),
+        (
+            TokenKind::While,
+            TokenStats {
+                binding_power: 0,
+                nod_function: Some(parsing_functions::statement_parsing::parse_while),
+                led_function: None,
+            },
+        ),
+        (
+            TokenKind::For,
+            TokenStats {
+                binding_power: 0,
+                nod_function: Some(parsing_functions::statement_parsing::parse_for),
+                led_function: None,
+            },
+        ),
+        (
+            TokenKind::If,
+            TokenStats {
+                binding_power: 0,
+                nod_function: Some(parsing_functions::statement_parsing::parse_if),
                 led_function: None,
             },
         ),

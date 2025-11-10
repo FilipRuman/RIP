@@ -15,11 +15,8 @@ use crate::{
     },
 };
 
-type NodFunction = fn(&mut Parser) -> Result<Expression>;
-type LedFunction = fn(&mut Parser, left: Expression, bp: i8) -> Result<Expression>;
-
 pub struct Parser {
-    pub valid_data_names: HashSet<String>,
+    pub valid_data_type_names: HashSet<String>,
     pub tokens: Vec<Token>,
     pub i: usize,
     pub token_stats: HashMap<TokenKind, TokenStats>,
@@ -69,7 +66,7 @@ impl Parser {
 
 pub fn parse(tokens: Vec<Token>, file: String) -> Result<Vec<Expression>> {
     let mut parser = Parser {
-        valid_data_names: HashSet::from([
+        valid_data_type_names: HashSet::from([
             "bool".to_string(),
             "char".to_string(),
             "short".to_string(),

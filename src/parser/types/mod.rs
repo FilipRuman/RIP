@@ -13,7 +13,7 @@ pub struct EnumField {
 #[derive(Debug, Clone)]
 pub enum DataType {
     Array { length: u32, inside: Box<DataType> },
-    Data { unsigned: bool },
+    Data { name: String, unsigned: bool },
     Struct { properties: Vec<Property> },
     Enum { fields: Vec<EnumField> },
     Pointer(Box<DataType>),
@@ -63,8 +63,11 @@ pub fn wrap_data_type_in_an_array(
     Ok(data_type)
 }
 fn identifier_type(parser: &mut Parser, unsigned: bool, current: Token) -> Result<DataType> {
-    let mut output = DataType::Data { unsigned };
-    while current.kind == TokenKind::Star {
+    let mut output = DataType::Data {
+        name: current.value,
+        unsigned,
+    };
+    while parser.current().kind == TokenKind::Star {
         output = DataType::Pointer(Box::new(output));
         parser.advance();
     }

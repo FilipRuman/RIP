@@ -124,7 +124,7 @@ fn parse_else(parser: &mut Parser) -> Result<(Expression, bool)> {
 }
 
 pub fn parse_while(parser: &mut Parser) -> Result<Expression> {
-    parser.expect(TokenKind::If)?;
+    parser.expect(TokenKind::While)?;
     parser.expect(TokenKind::OpenParen)?;
     let condition = parsing_functions::expression(parser, 0)?;
     parser.expect(TokenKind::CloseParen)?;

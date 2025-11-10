@@ -1,6 +1,6 @@
 use crate::{
     lexer::token::TokenKind,
-    parser::{Parser, expression::Expression, types},
+    parser::{self, Parser, expression::Expression, types},
 };
 pub mod data_parsing;
 pub mod identifier_parsing;
@@ -55,7 +55,6 @@ pub fn return_expr(parser: &mut Parser) -> Result<Expression> {
     })
 }
 pub fn expression(parser: &mut Parser, bp: i8) -> Result<Expression> {
-    info!("parse expression: input {:?}", parser.current());
     let mut current_expression = {
         let nod_function = parser.current_stats()?.nod_function.with_context(|| {
             format!(
@@ -88,7 +87,6 @@ pub fn expression(parser: &mut Parser, bp: i8) -> Result<Expression> {
             ))?;
     }
 
-    info!("parse expression: output {:?}", current_expression);
     return Ok(current_expression);
 }
 
@@ -133,7 +131,7 @@ pub fn grouping(parser: &mut Parser) -> Result<Expression> {
 
     let current = parser.current();
     if current.kind == TokenKind::Identifier
-        && parser.valid_data_names.contains(current.value.as_str())
+        && parser.valid_data_type_names.contains(current.value.as_str())
     {
         let data_type = types::parse(parser).context("grouping -> TypeConversion -> data_type")?;
         parser.expect(TokenKind::CloseParen)?;
@@ -192,11 +190,46 @@ pub fn type_def(parser: &mut Parser) -> Result<Expression> {
         .context("type_def -> name")?
         .value;
 
-    parser.valid_data_names.insert(name.to_string());
+    parser.valid_data_type_names.insert(name.to_string());
 
     Ok(Expression::Typedef {
         data_type,
         name,
+        debug_data: parser.debug_data(),
+    })
+}
+
+pub fn dereference(parser: &mut Parser) -> Result<Expression> {
+    parser.expect(TokenKind::Star)?;
+    let value = expression(parser, 0)?;
+
+    Ok(Expression::Dereference {
+        value: Box::new(value),
+        debug_data: parser.debug_data(),
+    })
+}
+
+pub fn decrement(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
+    parser.expect(TokenKind::MinusMinus)?;
+    Ok(Expression::Decrement {
+        target: Box::new(left),
+        debug_data: parser.debug_data(),
+    })
+}
+pub fn increment(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
+    parser.expect(TokenKind::PlusPlus)?;
+    Ok(Expression::Increment {
+        target: Box::new(left),
+        debug_data: parser.debug_data(),
+    })
+}
+
+pub fn access_reference(parser: &mut Parser) -> Result<Expression> {
+    parser.expect(TokenKind::Reference)?;
+    let value = expression(parser, 0)?;
+
+    Ok(Expression::AccessReference {
+        value: Box::new(value),
         debug_data: parser.debug_data(),
     })
 }

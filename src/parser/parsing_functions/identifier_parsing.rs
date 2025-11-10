@@ -13,7 +13,7 @@ use anyhow::{Context, Result};
 pub fn identifier(parser: &mut Parser) -> Result<Expression> {
     let first = parser.current().to_owned();
 
-    if parser.valid_data_names.contains(&first.value) {
+    if parser.valid_data_type_names.contains(&first.value) {
         handle_function_or_variable_declaration(parser)
             .with_context(|| format!("identifier - data type name: {}", first.value.as_str()))
     } else {
@@ -23,7 +23,7 @@ pub fn identifier(parser: &mut Parser) -> Result<Expression> {
 }
 
 fn handle_function_or_variable_declaration(parser: &mut Parser) -> Result<Expression> {
-    let data_type = types::parse(parser)
+    let mut data_type = types::parse(parser)
         .context("parse data type for: handle_function_or_variable_declaration")?;
     if parser.current().kind != TokenKind::Identifier {
         return Ok(Expression::DataTypeAccess {
@@ -33,6 +33,8 @@ fn handle_function_or_variable_declaration(parser: &mut Parser) -> Result<Expres
     }
 
     let name = parser.advance().to_owned();
+
+    data_type = types::wrap_data_type_in_an_array(data_type, parser)?;
 
     if parser.current().kind == TokenKind::OpenParen {
         handle_function_declaration(data_type, name.value, parser)

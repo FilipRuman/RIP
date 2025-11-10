@@ -1,6 +1,10 @@
+25 + (12 - 55);
+
+#include "endian.h"
 #include "file.c"
 #include <cstdio>
 #include <stddef.h>
+#include <stdio.h>
 typedef int i32;
 
 typedef struct {
@@ -34,8 +38,30 @@ int main() {
   }
 
   int a = 2;
-  int b = a + 3;
+  int *ptr = &a;
+  int b = *ptr + 3;
   int c;
+
+  int len = 25;
+  for (int i = 0; i < len; i++) {
+    printf("25 %d", i);
+  }
+  int i = 0;
+  while (i < len) {
+    printf("25 %d", i);
+  }
+
+  if (i < len) {
+    c++;
+    printf("i < len");
+    printf("i < len");
+    printf("i < len");
+  } else if (i > len * 2) {
+    b--;
+    printf("Some text");
+  } else {
+    return c * 25;
+  }
 
   c = a + b + val + global + m + i32;
 
