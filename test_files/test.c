@@ -36,6 +36,7 @@ int main() {
     int val = mul(v.x, v.y);
     global = val;
   }
+  i32 arrow_test = v->x;
 
   int a = 2;
   int *ptr = &a;

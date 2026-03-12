@@ -131,7 +131,9 @@ pub fn grouping(parser: &mut Parser) -> Result<Expression> {
 
     let current = parser.current();
     if current.kind == TokenKind::Identifier
-        && parser.valid_data_type_names.contains(current.value.as_str())
+        && parser
+            .valid_data_type_names
+            .contains(current.value.as_str())
     {
         let data_type = types::parse(parser).context("grouping -> TypeConversion -> data_type")?;
         parser.expect(TokenKind::CloseParen)?;
@@ -162,12 +164,12 @@ pub fn member_expr(parser: &mut Parser, left: Expression, _: i8) -> Result<Expre
         debug_data: parser.debug_data(),
     })
 }
-pub fn index(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
+pub fn access_array(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
     parser.expect(TokenKind::OpenBracket)?;
     let index = expression(parser, 0)?;
 
     parser.expect(TokenKind::CloseBracket)?;
-    Ok(Expression::Index {
+    Ok(Expression::AccessArray {
         left: Box::new(left),
         index: Box::new(index),
         debug_data: parser.debug_data(),
@@ -195,6 +197,17 @@ pub fn type_def(parser: &mut Parser) -> Result<Expression> {
     Ok(Expression::Typedef {
         data_type,
         name,
+        debug_data: parser.debug_data(),
+    })
+}
+
+pub fn arrow(parser: &mut Parser, left: Expression, _: i8) -> Result<Expression> {
+    parser.expect(TokenKind::Arrow)?;
+    let right = expression(parser, 0).with_context(|| format!("arrow expr-> left:{:?}", left))?;
+
+    Ok(Expression::Arrow {
+        left: Box::new(left),
+        right: Box::new(right),
         debug_data: parser.debug_data(),
     })
 }

@@ -328,7 +328,7 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
             TokenStats {
                 binding_power: 5,
                 nod_function: None,
-                led_function: Some(parsing_functions::index),
+                led_function: Some(parsing_functions::access_array),
             },
         ),
         (
@@ -377,6 +377,14 @@ pub fn token_stats() -> HashMap<TokenKind, TokenStats> {
                 binding_power: 0,
                 nod_function: Some(parsing_functions::statement_parsing::parse_if),
                 led_function: None,
+            },
+        ),
+        (
+            TokenKind::Arrow,
+            TokenStats {
+                binding_power: 1,
+                nod_function: None,
+                led_function: Some(parsing_functions::arrow),
             },
         ),
         (

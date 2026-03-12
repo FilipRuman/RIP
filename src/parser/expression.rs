@@ -40,6 +40,13 @@ pub enum Expression {
         name: String,
         debug_data: DebugData,
     },
+
+    Arrow {
+        left: Box<Expression>,
+        right: Box<Expression>,
+
+        debug_data: DebugData,
+    },
     Dereference {
         value: Box<Expression>,
         debug_data: DebugData,
@@ -137,7 +144,7 @@ pub enum Expression {
 
         debug_data: DebugData,
     },
-    Index {
+    AccessArray {
         left: Box<Expression>,
         index: Box<Expression>,
 
